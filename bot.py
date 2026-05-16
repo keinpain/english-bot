@@ -1,11 +1,9 @@
 import os
-from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from openai import AsyncOpenAI
-import asyncio
 
-# === ВАШИ КЛЮЧИ ===
+# === КЛЮЧИ (Render возьмёт из переменных окружения или из кода) ===
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8686785559:AAF0XL23x1MoS7fKKWZYj_IpJ1Xhes2MPAQ")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-8dc1daec370247958b1dc2e34671fb33ы")
 
@@ -19,9 +17,6 @@ client = AsyncOpenAI(
     api_key=DEEPSEEK_API_KEY,
     base_url="https://api.deepseek.com/v1",
 )
-
-# Создаём приложение Telegram-бота
-application = Application.builder().token(TELEGRAM_TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -47,25 +42,18 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply = f"Ошибка: {e}"
     await update.message.reply_text(reply)
 
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+def main():
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
-# === Создаём веб-сервер для приёма webhook'ов от Telegram ===
-app = Flask(__name__)
+    # Запускаем встроенный веб-сервер для вебхуков
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 8443)),
+        webhook_url=None,  # мы уже установили вебхук вручную
+        url_path="webhook",
+    )
 
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    # Получаем обновление от Telegram
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    # Запускаем асинхронную обработку
-    asyncio.run(application.process_update(update))
-    return "ok"
-
-@app.route("/")
-def home():
-    return "Bot is running!"
-
-# Render требует, чтобы сервер слушал порт, заданный в переменной окружения PORT
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8443))
-    app.run(host="0.0.0.0", port=port)
+    main()
