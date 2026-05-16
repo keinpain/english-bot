@@ -1,21 +1,22 @@
 import os
+from openai import AsyncOpenAI
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from openai import AsyncOpenAI
 
-# === КЛЮЧИ БЕРУТСЯ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ RENDER ===
+# === КЛЮЧИ ===
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
-DEEPSEEK_API_KEY = os.environ["DEEPSEEK_API_KEY"]
+OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
+
+# Настраиваем клиент на OpenRouter
+client = AsyncOpenAI(
+    api_key=OPENROUTER_API_KEY,
+    base_url="https://openrouter.ai/api/v1",
+)
 
 SYSTEM_PROMPT = (
     "Ты — дружелюбный AI-репетитор английского языка. "
     "Отвечай на английском, но если нужно объяснить правило, переходи на русский. "
     "Аккуратно исправляй ошибки пользователя, давай краткие пояснения."
-)
-
-client = AsyncOpenAI(
-    api_key=DEEPSEEK_API_KEY,
-    base_url="https://api.deepseek.com/v1",
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -29,7 +30,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
     try:
         response = await client.chat.completions.create(
-            model="deepseek-chat",
+            model="google/gemini-2.0-flash-lite-001",  # Бесплатная и очень быстрая модель
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
