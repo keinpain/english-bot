@@ -46,7 +46,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
             )
             result = response.json()
-            reply = result["result"]["alternatives"][0]["message"]["text"]
+            # Если ответ не содержит 'result', покажем его целиком
+            if "result" not in result:
+                reply = f"Ответ Яндекса: {result}"
+            else:
+                reply = result["result"]["alternatives"][0]["message"]["text"]
+    except Exception as e:
+        reply = f"Ошибка: {e}"
     except Exception as e:
         reply = f"Ошибка: {e}"
     await update.message.reply_text(reply)
