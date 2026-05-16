@@ -23,9 +23,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-        try:
+    try:
         async with httpx.AsyncClient() as client:
-            # Убедимся, что ID каталога не пустой
             folder_id = os.environ.get("YANDEX_FOLDER_ID", "")
             if not folder_id:
                 reply = "Ошибка: не задан YANDEX_FOLDER_ID в переменных окружения"
@@ -57,10 +56,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply = f"Ответ Яндекса: {result}"
             else:
                 reply = result["result"]["alternatives"][0]["message"]["text"]
-    except Exception as e:
-        reply = f"Ошибка: {e}"
-    except Exception as e:
-        reply = f"Ошибка: {e}"
     except Exception as e:
         reply = f"Ошибка: {e}"
     await update.message.reply_text(reply)
