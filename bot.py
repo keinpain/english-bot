@@ -23,13 +23,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-    try:
+        try:
         async with httpx.AsyncClient() as client:
             folder_id = os.environ.get("YANDEX_FOLDER_ID", "")
+            # Отладочная информация: покажем, что лежит в переменной
             if not folder_id:
-                reply = "Ошибка: не задан YANDEX_FOLDER_ID в переменных окружения"
+                reply = "Ошибка: переменная YANDEX_FOLDER_ID пуста"
                 await update.message.reply_text(reply)
                 return
+            # Сформируем modelUri и тоже покажем
+            model_uri = f"gpt://{folder_id}/yandexgpt/lite"
+            debug_info = f"folder_id={folder_id}, model_uri={model_uri}"
 
             response = await client.post(
                 "https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
@@ -39,7 +43,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "modelUri": f"gpt://{folder_id}/yandexgpt/lite",
+                    "modelUri": model_uri,
                     "completionOptions": {
                         "stream": False,
                         "temperature": 0.7,
@@ -53,12 +57,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             result = response.json()
             if "result" not in result:
-                reply = f"Ответ Яндекса: {result}"
+                reply = f"{debug_info}\nОтвет Яндекса: {result}"
             else:
                 reply = result["result"]["alternatives"][0]["message"]["text"]
     except Exception as e:
         reply = f"Ошибка: {e}"
-    await update.message.reply_text(reply)
 
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
