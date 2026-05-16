@@ -23,7 +23,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-        try:
+    try:
         async with httpx.AsyncClient() as client:
             folder_id = os.environ.get("YANDEX_FOLDER_ID", "")
             # Отладочная информация: покажем, что лежит в переменной
