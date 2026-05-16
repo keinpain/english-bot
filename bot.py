@@ -32,7 +32,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/lite",
+                    "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt-lite/latest",
                     "completionOptions": {
                         "stream": False,
                         "temperature": 0.7,
