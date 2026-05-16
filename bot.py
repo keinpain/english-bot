@@ -1,18 +1,57 @@
 import os
+import httpx
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
+# === КЛЮЧИ ===
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
-YANDEX_API_KEY = os.environ.get("YANDEX_API_KEY", "не задан")
-YANDEX_FOLDER_ID = os.environ.get("YANDEX_FOLDER_ID", "не задан")
+YANDEX_API_KEY = os.environ["YANDEX_API_KEY"]
+YANDEX_FOLDER_ID = os.environ["YANDEX_FOLDER_ID"]
+
+SYSTEM_PROMPT = (
+    "Ты — дружелюбный AI-репетитор английского языка. "
+    "Отвечай на английском, но если нужно объяснить правило, переходи на русский. "
+    "Аккуратно исправляй ошибки пользователя, давай краткие пояснения."
+)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Привет! Я тестовый эхо-бот.")
+    await update.message.reply_text(
+        "👋 Привет! Я твой репетитор английского. Пиши мне на английском — "
+        "я исправлю ошибки и объясню."
+    )
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_text = update.message.text
-    debug = f"folder_id={YANDEX_FOLDER_ID}\napi_key={YANDEX_API_KEY[:10]}..."
-    reply = f"Эхо: {user_text}\n\n{debug}"
+    user_message = update.message.text
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
+                headers={
+                    "Authorization": f"Api-Key {YANDEX_API_KEY}",
+                    "x-folder-id": YANDEX_FOLDER_ID,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/lite",
+                    "completionOptions": {
+                        "stream": False,
+                        "temperature": 0.7,
+                        "maxTokens": 500
+                    },
+                    "messages": [
+                        {"role": "system", "text": SYSTEM_PROMPT},
+                        {"role": "user", "text": user_message}
+                    ]
+                }
+            )
+            result = response.json()
+            if "result" not in result:
+                reply = f"Ответ Яндекса: {result}"
+            else:
+                reply = result["result"]["alternatives"][0]["message"]["text"]
+    except Exception as e:
+        reply = f"Ошибка: {e}"
     await update.message.reply_text(reply)
 
 def main():
