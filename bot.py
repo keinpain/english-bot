@@ -3,7 +3,6 @@ import httpx
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# === КЛЮЧИ ===
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 YANDEX_API_KEY = os.environ["YANDEX_API_KEY"]
 YANDEX_FOLDER_ID = os.environ["YANDEX_FOLDER_ID"]
@@ -25,10 +24,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
     try:
         async with httpx.AsyncClient() as client:
-            # Собираем modelUri и сразу отправим его в отладке
-            model_uri = f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/lite"
-            debug_text = f"Debug modelUri: {model_uri}"
-
             response = await client.post(
                 "https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
                 headers={
@@ -37,7 +32,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "modelUri": model_uri,
+                    "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/lite",
                     "completionOptions": {
                         "stream": False,
                         "temperature": 0.7,
@@ -51,11 +46,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             result = response.json()
             if "result" not in result:
-                reply = f"{debug_text}\nОтвет Яндекса: {result}"
+                reply = f"Ответ Яндекса: {result}"
             else:
                 reply = result["result"]["alternatives"][0]["message"]["text"]
     except Exception as e:
-        reply = f"{debug_text}\nОшибка: {e}" if 'debug_text' in locals() else f"Ошибка: {e}"
+        reply = f"Ошибка: {e}"
     await update.message.reply_text(reply)
 
 def main():
