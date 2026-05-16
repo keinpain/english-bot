@@ -30,7 +30,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
     try:
         response = await client.chat.completions.create(
-            model="google/gemini-2.0-flash-lite-001",  # Бесплатная и очень быстрая модель
+            model="meta-llama/llama-3.2-3b-instruct:free",  # Бесплатная и очень быстрая модель
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
