@@ -3,9 +3,9 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from openai import AsyncOpenAI
 
-# === КЛЮЧИ (Render возьмёт из переменных окружения или из кода) ===
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8686785559:AAF0XL23x1MoS7fKKWZYj_IpJ1Xhes2MPAQ")
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-8dc1daec370247958b1dc2e34671fb33ы")
+# === КЛЮЧИ БЕРУТСЯ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ RENDER ===
+TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+DEEPSEEK_API_KEY = os.environ["DEEPSEEK_API_KEY"]
 
 SYSTEM_PROMPT = (
     "Ты — дружелюбный AI-репетитор английского языка. "
@@ -51,7 +51,7 @@ def main():
     app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 8443)),
-        webhook_url=None,  # мы уже установили вебхук вручную
+        webhook_url=os.environ.get("RENDER_EXTERNAL_URL", "") + "/webhook",
         url_path="webhook",
     )
 
