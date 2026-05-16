@@ -23,17 +23,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-    try:
+        try:
         async with httpx.AsyncClient() as client:
+            # Убедимся, что ID каталога не пустой
+            folder_id = os.environ.get("YANDEX_FOLDER_ID", "")
+            if not folder_id:
+                reply = "Ошибка: не задан YANDEX_FOLDER_ID в переменных окружения"
+                await update.message.reply_text(reply)
+                return
+
             response = await client.post(
                 "https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
                 headers={
                     "Authorization": f"Api-Key {YANDEX_API_KEY}",
-                    "x-folder-id": YANDEX_FOLDER_ID,
+                    "x-folder-id": folder_id,
                     "Content-Type": "application/json"
                 },
                 json={
-                    "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/lite",
+                    "modelUri": f"gpt://{folder_id}/yandexgpt/lite",
                     "completionOptions": {
                         "stream": False,
                         "temperature": 0.7,
@@ -46,11 +53,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
             )
             result = response.json()
-            # Если ответ не содержит 'result', покажем его целиком
             if "result" not in result:
                 reply = f"Ответ Яндекса: {result}"
             else:
                 reply = result["result"]["alternatives"][0]["message"]["text"]
+    except Exception as e:
+        reply = f"Ошибка: {e}"
     except Exception as e:
         reply = f"Ошибка: {e}"
     except Exception as e:
