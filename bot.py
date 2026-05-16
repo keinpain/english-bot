@@ -5,12 +5,17 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 # === КЛЮЧИ ===
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
-OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
+YANDEX_API_KEY = os.environ["YANDEX_API_KEY"]
+YANDEX_FOLDER_ID = os.environ["YANDEX_FOLDER_ID"]
 
-# Настраиваем клиент на OpenRouter
+# Настраиваем клиент на YandexGPT (OpenAI-совместимый режим)
 client = AsyncOpenAI(
-    api_key=OPENROUTER_API_KEY,
-    base_url="https://openrouter.ai/api/v1",
+    api_key=YANDEX_API_KEY,
+    base_url="https://llm.api.cloud.yandex.net/foundationModels/v1",
+    default_headers={
+        "Authorization": f"Api-Key {YANDEX_API_KEY}",
+        "x-folder-id": YANDEX_FOLDER_ID,
+    },
 )
 
 SYSTEM_PROMPT = (
@@ -30,7 +35,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
     try:
         response = await client.chat.completions.create(
-            model="meta-llama/llama-3.2-3b-instruct:free",  # Бесплатная и очень быстрая модель
+            model="yandexgpt/lite",  # Бесплатная и быстрая модель
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
